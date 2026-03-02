@@ -29,7 +29,7 @@ export default function HostLobby({
   }
 
   return (
-    <div className="min-h-screen text-white flex flex-col items-center p-8">
+    <div className="min-h-screen text-white flex flex-col items-center p-8" style={{ background: "var(--player-bg)" }}>
       <div className="w-full max-w-3xl">
         {/* Room code */}
         <div className="mb-10 text-center">

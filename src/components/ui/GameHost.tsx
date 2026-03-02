@@ -207,7 +207,7 @@ export default function GameHost({
 
   if (phase === "end") {
     return (
-      <div className="min-h-screen text-white flex flex-col items-center justify-center p-8">
+      <div className="min-h-screen text-white flex flex-col items-center justify-center p-8" style={{ background: "var(--player-bg)" }}>
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <p

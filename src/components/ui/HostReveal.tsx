@@ -22,7 +22,7 @@ export default function HostReveal({
   const isLastQuestion = question.index + 1 >= question.total;
 
   return (
-    <div className="min-h-screen text-white flex flex-col">
+    <div className="min-h-screen text-white flex flex-col" style={{ background: "var(--player-bg)" }}>
       {/* Top bar */}
       <div
         className="px-6 py-4 border-b text-center"

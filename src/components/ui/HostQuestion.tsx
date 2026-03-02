@@ -36,7 +36,7 @@ export default function HostQuestion({
   return (
     <div
       className="min-h-screen text-white flex flex-col"
-      style={{ color: "white" }}
+      style={{ background: "var(--player-bg)", color: "white" }}
     >
       {/* Top bar */}
       <div

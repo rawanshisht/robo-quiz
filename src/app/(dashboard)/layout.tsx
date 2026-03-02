@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ background: "var(--player-bg)" }}>
       <Navbar userName={session.user?.name ?? session.user?.email ?? ""} />
       <main className="mx-auto max-w-4xl px-4 py-10">{children}</main>
     </div>

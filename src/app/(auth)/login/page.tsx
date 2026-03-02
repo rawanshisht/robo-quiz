@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
+    <main className="min-h-screen flex items-center justify-center p-6" style={{ background: "var(--player-bg)" }}>
       <div className="w-full max-w-sm">
         {/* Wordmark */}
         <div className="mb-10">
