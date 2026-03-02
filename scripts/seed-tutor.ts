@@ -9,9 +9,9 @@
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 
-const email = "admin@roboquiz.local";
+const email = "admin@robocode.uk";
 const name = "Admin";
-const password = "changeme123";
+const password = "adminpassword";
 
 async function main() {
   if (!process.env.DATABASE_URL) {

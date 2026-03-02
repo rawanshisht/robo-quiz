@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@16:*)",
+      "Bash(cp:*)",
+      "Bash(npx next:*)",
+      "mcp__Neon__list_projects",
+      "mcp__Neon__create_project",
+      "mcp__Neon__run_sql_transaction",
+      "Bash(npm install:*)",
+      "Bash(npm show:*)",
+      "Bash(npx auth:*)",
+      "Bash(node:*)",
+      "Bash(npm run:*)",
+      "mcp__Neon__run_sql",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__Neon__prepare_database_migration",
+      "mcp__Neon__complete_database_migration",
+      "mcp__plugin_playwright_playwright__browser_handle_dialog",
+      "mcp__linear-server__list_issues",
+      "mcp__linear-server__list_issue_statuses",
+      "mcp__linear-server__save_issue",
+      "mcp__linear-server__get_issue"
+    ]
+  }
+}
