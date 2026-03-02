@@ -19,10 +19,42 @@ type Phase = "lobby" | "question" | "reveal" | "end";
 
 function PauseOverlay() {
   return (
-    <div className="fixed inset-0 z-50 bg-gray-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-white">
-      <div className="text-5xl mb-4">⏸</div>
-      <p className="text-2xl font-black">Game Paused</p>
-      <p className="mt-2 text-gray-400 text-sm">Waiting for the host to resume…</p>
+    <div
+      className="fixed inset-0 z-50 backdrop-blur-sm flex flex-col items-center justify-center text-white"
+      style={{ background: "rgba(9,9,15,0.93)" }}
+    >
+      <div
+        className="mb-4 w-20 h-20 rounded-full flex items-center justify-center text-4xl border-2"
+        style={{
+          borderColor: "var(--brand-primary)",
+          background: "rgba(0,220,222,0.1)",
+          boxShadow: "0 0 32px rgba(0,220,222,0.25)",
+          fontFamily: "var(--font-bebas)",
+        }}
+      >
+        ⏸
+      </div>
+      <p
+        className="leading-none"
+        style={{
+          fontFamily: "var(--font-bebas)",
+          fontSize: "2.5rem",
+          letterSpacing: "0.08em",
+          background:
+            "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+        }}
+      >
+        Game Paused
+      </p>
+      <p
+        className="mt-2 text-sm"
+        style={{ color: "#4a4a5a", fontFamily: "var(--font-syne)" }}
+      >
+        Waiting for the host to resume…
+      </p>
     </div>
   );
 }
@@ -193,59 +225,126 @@ export default function GamePlayer({ code }: { code: string }) {
     const myEntry = finalRankings.find((e) => e.nickname === nickname);
 
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm text-center">
-          <p className="text-5xl mb-4">🏆</p>
-          <h1 className="text-3xl font-black mb-1">Game Over!</h1>
-          {myRank > 0 && (
-            <p className="text-gray-400 mb-6">
-              You finished{" "}
-              <span className="text-white font-bold">#{myRank}</span> with{" "}
-              <span className="text-yellow-400 font-bold">
-                {myEntry?.score.toLocaleString()} pts
-              </span>
+      <div
+        className="min-h-screen text-white flex flex-col items-center justify-center p-6"
+        style={{ background: "var(--player-bg)" }}
+      >
+        <div className="w-full max-w-sm">
+          <div className="mb-8 text-center">
+            <p className="text-4xl mb-2" style={{ lineHeight: 1 }}>🏆</p>
+            <p
+              className="t-title"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Game Over!
             </p>
-          )}
-          <ol className="flex flex-col gap-2 text-left">
-            {finalRankings.slice(0, 5).map((entry, i) => (
-              <li
-                key={entry.nickname}
-                className={`flex items-center justify-between rounded-xl px-5 py-3 border ${
-                  entry.nickname === nickname
-                    ? "bg-blue-600/20 border-blue-500"
-                    : "bg-white/5 border-white/10"
-                }`}
+            {myRank > 0 && (
+              <p
+                className="text-sm mt-2"
+                style={{ color: "#4a4a5a", fontFamily: "var(--font-syne)" }}
               >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`text-sm font-black w-6 text-center ${
-                      i === 0
-                        ? "text-yellow-400"
-                        : i === 1
-                          ? "text-gray-300"
-                          : i === 2
-                            ? "text-amber-600"
-                            : "text-gray-600"
-                    }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="font-semibold">{entry.nickname}</span>
-                </div>
-                <span className="font-black tabular-nums">
-                  {entry.score.toLocaleString()}
+                You finished{" "}
+                <span
+                  className="font-black"
+                  style={{
+                    color: "var(--brand-primary)",
+                    fontFamily: "var(--font-fira)",
+                  }}
+                >
+                  #{myRank}
+                </span>{" "}
+                with{" "}
+                <span
+                  className="font-black"
+                  style={{
+                    color: "var(--brand-tertiary)",
+                    fontFamily: "var(--font-fira)",
+                  }}
+                >
+                  {myEntry?.score.toLocaleString()} pts
                 </span>
-              </li>
-            ))}
+              </p>
+            )}
+          </div>
+          <ol className="flex flex-col gap-2">
+            {finalRankings.slice(0, 5).map((entry, i) => {
+              const medalColor =
+                i === 0
+                  ? "var(--brand-primary)"
+                  : i === 1
+                    ? "#d1d5db"
+                    : i === 2
+                      ? "var(--brand-tertiary)"
+                      : "#374151";
+              const isMe = entry.nickname === nickname;
+              return (
+                <li
+                  key={entry.nickname}
+                  className="flex items-center justify-between rounded-2xl px-5 py-3 border"
+                  style={{
+                    background: isMe
+                      ? "rgba(255,0,191,0.08)"
+                      : "rgba(255,255,255,0.04)",
+                    borderColor: isMe
+                      ? "rgba(255,0,191,0.3)"
+                      : "rgba(255,255,255,0.07)",
+                    boxShadow: isMe
+                      ? "0 0 16px rgba(255,0,191,0.12)"
+                      : "none",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="font-black w-6 text-center"
+                      style={{
+                        fontFamily: "var(--font-bebas)",
+                        color: medalColor,
+                        fontSize: "1.2rem",
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ fontFamily: "var(--font-syne)" }}
+                    >
+                      {entry.nickname}
+                    </span>
+                  </div>
+                  <span
+                    className="font-black tabular-nums text-sm"
+                    style={{
+                      fontFamily: "var(--font-fira)",
+                      color: "var(--brand-tertiary)",
+                    }}
+                  >
+                    {entry.score.toLocaleString()}
+                  </span>
+                </li>
+              );
+            })}
           </ol>
           <button
             onClick={() => {
               localStorage.removeItem(`roboquiz_${code}`);
               router.push("/play");
             }}
-            className="mt-6 w-full rounded-xl bg-blue-600 py-4 text-lg font-bold hover:bg-blue-700 transition-colors"
+            className="t-button uppercase mt-6 w-full rounded-2xl py-4 transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+              color: "#09090f",
+              fontFamily: "var(--font-syne)",
+              boxShadow: "0 4px 24px rgba(0,220,222,0.3)",
+            }}
           >
-            Play Again
+            Play Again 🎮
           </button>
         </div>
       </div>

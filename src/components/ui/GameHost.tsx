@@ -207,44 +207,88 @@ export default function GameHost({
 
   if (phase === "end") {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-8">
+      <div className="min-h-screen text-white flex flex-col items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <p className="text-5xl mb-2">🏆</p>
-            <h1 className="text-3xl font-black">Game Over</h1>
-            <p className="text-gray-400 mt-1">{quizTitle}</p>
+            <p
+              className="t-title mb-2"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Game Over
+            </p>
+            <p
+              className="text-sm"
+              style={{ color: "var(--text-muted)", fontFamily: "var(--font-syne)" }}
+            >
+              {quizTitle}
+            </p>
           </div>
           <ol className="flex flex-col gap-2">
-            {finalRankings.map((entry, i) => (
-              <li
-                key={entry.nickname}
-                className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-5 py-3"
-              >
-                <div className="flex items-center gap-3">
+            {finalRankings.map((entry, i) => {
+              const medalColor =
+                i === 0
+                  ? "var(--brand-primary)"
+                  : i === 1
+                    ? "#d1d5db"
+                    : i === 2
+                      ? "var(--brand-tertiary)"
+                      : "#374151";
+              return (
+                <li
+                  key={entry.nickname}
+                  className="flex items-center justify-between rounded-xl px-5 py-3 border"
+                  style={{
+                    background: "var(--bg-card)",
+                    borderColor: "var(--border)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="font-black w-6 text-center"
+                      style={{
+                        fontFamily: "var(--font-bebas)",
+                        color: medalColor,
+                        fontSize: "1.2rem",
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ fontFamily: "var(--font-syne)" }}
+                    >
+                      {entry.nickname}
+                    </span>
+                  </div>
                   <span
-                    className={`text-sm font-black w-6 text-center ${
-                      i === 0
-                        ? "text-yellow-400"
-                        : i === 1
-                          ? "text-gray-300"
-                          : i === 2
-                            ? "text-amber-600"
-                            : "text-gray-600"
-                    }`}
+                    className="font-black tabular-nums text-sm"
+                    style={{
+                      fontFamily: "var(--font-fira)",
+                      color: "var(--brand-tertiary)",
+                    }}
                   >
-                    {i + 1}
+                    {entry.score.toLocaleString()}
                   </span>
-                  <span className="font-semibold">{entry.nickname}</span>
-                </div>
-                <span className="font-black tabular-nums">
-                  {entry.score.toLocaleString()}
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
           <button
             onClick={() => router.push("/quizzes")}
-            className="mt-6 w-full rounded-xl bg-blue-600 py-4 text-lg font-bold hover:bg-blue-700 transition-colors"
+            className="t-button uppercase mt-6 w-full rounded-xl py-4 transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+              color: "#09090f",
+              fontFamily: "var(--font-syne)",
+              boxShadow: "0 4px 20px rgba(0,220,222,0.25)",
+            }}
           >
             Back to Quizzes
           </button>

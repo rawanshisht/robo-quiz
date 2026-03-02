@@ -14,17 +14,28 @@ export default function DeleteQuizButton({ id }: { id: string }) {
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-gray-500">Delete?</span>
+      <div className="flex items-center gap-1.5">
+        <span
+          className="text-xs"
+          style={{ color: "var(--text-muted)", fontFamily: "var(--font-syne)" }}
+        >
+          Delete?
+        </span>
         <button
           onClick={handleDelete}
-          className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+          className="rounded-lg px-3 py-1.5 text-sm font-bold text-white hover:opacity-90 transition-all active:scale-95"
+          style={{ background: "#dc2626" }}
         >
           Yes
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+          className="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all hover:bg-white/5 active:scale-95"
+          style={{
+            borderColor: "var(--border)",
+            color: "var(--text-muted)",
+            fontFamily: "var(--font-syne)",
+          }}
         >
           No
         </button>
@@ -35,7 +46,12 @@ export default function DeleteQuizButton({ id }: { id: string }) {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+      className="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all hover:bg-red-900/20 active:scale-95"
+      style={{
+        borderColor: "rgba(239,68,68,0.3)",
+        color: "#ef4444",
+        fontFamily: "var(--font-syne)",
+      }}
     >
       Delete
     </button>

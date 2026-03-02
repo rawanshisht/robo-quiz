@@ -8,24 +8,71 @@ export default async function QuizzesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Quiz Library</h1>
+      {/* Header */}
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <h1
+            className="t-heading"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Quiz Library
+          </h1>
+          <p
+            className="t-small mt-1"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {quizzes.length === 0
+              ? "No quizzes yet"
+              : `${quizzes.length} quiz${quizzes.length !== 1 ? "zes" : ""}`}
+          </p>
+        </div>
+
         <Link
           href="/quizzes/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="t-button uppercase flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-95"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+            color: "#09090f",
+            fontFamily: "var(--font-syne)",
+            boxShadow: "0 2px 16px rgba(0,220,222,0.25)",
+          }}
         >
-          + New Quiz
+          <span className="text-base leading-none">+</span>
+          New Quiz
         </Link>
       </div>
 
+      {/* Empty state */}
       {quizzes.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
-          <p className="text-gray-400">No quizzes yet.</p>
+        <div
+          className="rounded-2xl border-2 border-dashed py-20 text-center"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <p
+            className="text-lg mb-1"
+            style={{ fontFamily: "var(--font-syne)", color: "var(--text)" }}
+          >
+            Nothing here yet
+          </p>
+          <p
+            className="text-sm mb-6"
+            style={{ color: "var(--text-muted)", fontFamily: "var(--font-syne)" }}
+          >
+            Create your first quiz to get started
+          </p>
           <Link
             href="/quizzes/new"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-70"
+            style={{ color: "var(--brand-primary)", fontFamily: "var(--font-syne)" }}
           >
-            Create your first quiz
+            Create a quiz →
           </Link>
         </div>
       ) : (
@@ -33,12 +80,31 @@ export default async function QuizzesPage() {
           {quizzes.map((quiz) => (
             <li
               key={quiz.id}
-              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4"
+              className="group flex items-center justify-between rounded-xl px-6 py-4 border transition-all hover:border-white/20"
+              style={{
+                background: "var(--bg-card)",
+                borderColor: "var(--border)",
+              }}
             >
               <div>
-                <p className="font-semibold text-gray-900">{quiz.title}</p>
-                <p className="text-xs text-gray-400">
-                  {new Date(quiz.updated_at).toLocaleDateString()}
+                <p
+                  className="font-semibold text-base"
+                  style={{ color: "var(--text)", fontFamily: "var(--font-syne)" }}
+                >
+                  {quiz.title}
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{
+                    fontFamily: "var(--font-fira)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  {new Date(quiz.updated_at).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </p>
               </div>
 
@@ -46,7 +112,12 @@ export default async function QuizzesPage() {
                 <HostButton quizId={quiz.id} />
                 <Link
                   href={`/quizzes/${quiz.id}/edit`}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                  className="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all hover:bg-white/5 active:scale-95"
+                  style={{
+                    borderColor: "var(--border)",
+                    color: "var(--text-muted)",
+                    fontFamily: "var(--font-syne)",
+                  }}
                 >
                   Edit
                 </Link>

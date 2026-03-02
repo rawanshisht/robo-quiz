@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Maps CSS vars → Tailwind font-* utilities */
+  --font-sans:    var(--font-syne);   /* Source Sans 3 / Myriad Pro */
+  --font-display: var(--font-bebas);  /* Bebas Neue / AIR FORCE     */
+  --font-mono:    var(--font-fira);   /* JetBrains Mono              */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* ── App palette (unified dark) ─────────────────────── */
+  --bg:           #09090f;
+  --bg-card:      rgba(255, 255, 255, 0.05);
+  --text:         #e8e8e8;
+  --text-muted:   #4a4a5a;
+  --accent:       #00dcde;
+  --accent-hover: #00b8ba;
+  --border:       rgba(255, 255, 255, 0.09);
+
+  /* ── Brand colors ────────────────────────────────────── */
+  --brand-primary:   #00dcde;
+  --brand-secondary: #ff00bf;
+  --brand-tertiary:  #ff9752;
+
+  /* ── App background (brand-tinted dark) ─────────────── */
+  --player-bg:
+    radial-gradient(ellipse 70% 50% at 15%  8%, rgba(0, 220, 222, 0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 85% 92%, rgba(255, 0, 191, 0.12) 0%, transparent 55%),
+    #09090f;
+
+  /* ── Game palette (kept for host screens) ────────────── */
+  --game-bg:     #09090f;
+  --game-yellow: #f5d800;
+
+  /* ── Typography scale ────────────────────────────────── *
+   *  TITLE      AIR FORCE / Bebas Neue     70px
+   *  SUBTITLE   Myriad Pro / Source Sans   50px  600
+   *  HEADING    AIR FORCE / Bebas Neue     36px
+   *  Code       JetBrains Mono             14px
+   *  H1         48 / 56   700  ls -0.5px
+   *  H2         36 / 44   600
+   *  H3         28 / 36   600
+   *  Lead       20 / 30   400
+   *  Body       16 / 26   400
+   *  Small      14 / 22   400
+   *  Button     16 / 20   500  (UPPERCASE optional for CTAs)
+   * ──────────────────────────────────────────────────────*/
+  --ts-title:    70px;
+  --ts-subtitle: 50px;
+  --ts-heading:  36px;
+  --ts-code:     14px;
+
+  --ts-h1:       48px;  --ts-h1-lh:  56px;  --ts-h1-ls: -0.5px;
+  --ts-h2:       36px;  --ts-h2-lh:  44px;
+  --ts-h3:       28px;  --ts-h3-lh:  36px;
+  --ts-lead:     20px;  --ts-lead-lh: 30px;
+  --ts-body:     16px;  --ts-body-lh: 26px;
+  --ts-small:    14px;  --ts-small-lh: 22px;
+  --ts-btn:      16px;  --ts-btn-lh:  20px;
+}
+
+/* ── Keyframe animations ─────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(1.65); opacity: 0;   }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(0.65); opacity: 0.3; }
+  50%       { transform: scale(1);   opacity: 1;   }
+}
+
+@keyframes pop-in {
+  0%   { transform: scale(0.5);  opacity: 0; }
+  75%  { transform: scale(1.1); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+/* ── Base reset ──────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-syne), system-ui, sans-serif;
+  font-size: var(--ts-body);
+  line-height: var(--ts-body-lh);
+  background: var(--player-bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Semantic typography classes ─────────────────────── */
+
+/* TITLE — AIR FORCE 70px */
+.t-title {
+  font-family: var(--font-bebas);
+  font-size: var(--ts-title);
+  line-height: 1;
+}
+
+/* SUBTITLE — Myriad Pro Semibold 50px */
+.t-subtitle {
+  font-family: var(--font-syne);
+  font-size: var(--ts-subtitle);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+/* HEADING — AIR FORCE 36px */
+.t-heading {
+  font-family: var(--font-bebas);
+  font-size: var(--ts-heading);
+  line-height: 1;
+}
+
+/* H1 — 48/56 Bold letter-spacing -0.5px */
+.t-h1 {
+  font-family: var(--font-syne);
+  font-size: var(--ts-h1);
+  line-height: var(--ts-h1-lh);
+  font-weight: 700;
+  letter-spacing: var(--ts-h1-ls);
+}
+
+/* H2 — 36/44 Semibold */
+.t-h2 {
+  font-family: var(--font-syne);
+  font-size: var(--ts-h2);
+  line-height: var(--ts-h2-lh);
+  font-weight: 600;
+}
+
+/* H3 — 28/36 Semibold */
+.t-h3 {
+  font-family: var(--font-syne);
+  font-size: var(--ts-h3);
+  line-height: var(--ts-h3-lh);
+  font-weight: 600;
+}
+
+/* Lead — 20/30 Regular */
+.t-lead {
+  font-size: var(--ts-lead);
+  line-height: var(--ts-lead-lh);
+  font-weight: 400;
+}
+
+/* Body — 16/26 Regular (matches body default) */
+.t-body {
+  font-size: var(--ts-body);
+  line-height: var(--ts-body-lh);
+  font-weight: 400;
+}
+
+/* Small — 14/22 Regular */
+.t-small {
+  font-size: var(--ts-small);
+  line-height: var(--ts-small-lh);
+  font-weight: 400;
+}
+
+/* Button / Label — 16/20 Medium */
+.t-button {
+  font-size: var(--ts-btn);
+  line-height: var(--ts-btn-lh);
+  font-weight: 500;
+}
+
+/* Code — JetBrains Mono 14px */
+.t-code {
+  font-family: var(--font-fira);
+  font-size: var(--ts-code);
+  line-height: var(--ts-small-lh);
 }

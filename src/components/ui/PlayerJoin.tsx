@@ -49,26 +49,68 @@ export default function PlayerJoin() {
     }
   }
 
+  const isReady = code.length === 6 && nickname.trim().length > 0;
+
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-black text-white">RoboQuiz</h1>
-          <p className="mt-1 text-gray-500 text-sm">
-            Enter the room code shown on screen
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-6"
+      style={{ background: "var(--player-bg)" }}
+    >
+      <div className="w-full max-w-xs">
+        {/* Logo */}
+        <div className="mb-10 text-center">
+          <div className="text-5xl mb-3" style={{ lineHeight: 1 }}>
+            🤖
+          </div>
+          <h1
+            className="leading-none tracking-wide"
+            style={{
+              fontFamily: "var(--font-bebas)",
+              fontSize: "4.5rem",
+              background:
+                "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            RoboQuiz
+          </h1>
+          <p
+            className="mt-2 text-xs uppercase tracking-[0.25em]"
+            style={{ color: "#4a4a5a", fontFamily: "var(--font-syne)" }}
+          >
+            Enter your room code to play
           </p>
         </div>
 
         <form onSubmit={handleJoin} className="flex flex-col gap-4">
+          {/* Room code */}
           <input
             type="text"
-            placeholder="ROOM CODE"
+            placeholder="XXXXXX"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             maxLength={6}
             required
-            className="rounded-xl bg-white/10 border border-white/20 px-4 py-4 text-white text-center text-3xl font-black font-mono tracking-widest placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-2xl text-center text-4xl font-black tracking-[0.35em] py-5 outline-none transition-all border-2 placeholder:opacity-15"
+            style={{
+              fontFamily: "var(--font-fira)",
+              background: "rgba(0,220,222,0.07)",
+              borderColor:
+                code.length === 6
+                  ? "var(--brand-primary)"
+                  : "rgba(0,220,222,0.2)",
+              color: "var(--brand-primary)",
+              caretColor: "var(--brand-primary)",
+              boxShadow:
+                code.length === 6
+                  ? "0 0 28px rgba(0,220,222,0.28)"
+                  : "none",
+            }}
           />
+
+          {/* Nickname */}
           <input
             type="text"
             placeholder="Your nickname"
@@ -76,19 +118,48 @@ export default function PlayerJoin() {
             onChange={(e) => setNickname(e.target.value)}
             maxLength={20}
             required
-            className="rounded-xl bg-white/10 border border-white/20 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-2xl px-4 py-3.5 text-sm font-semibold text-white outline-none transition-all border"
+            style={{
+              fontFamily: "var(--font-syne)",
+              background: "rgba(255,0,191,0.07)",
+              borderColor: "rgba(255,0,191,0.22)",
+              caretColor: "var(--brand-secondary)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "var(--brand-secondary)";
+              e.target.style.boxShadow = "0 0 18px rgba(255,0,191,0.2)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(255,0,191,0.22)";
+              e.target.style.boxShadow = "none";
+            }}
           />
 
           {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
+            <p
+              className="text-center text-sm font-semibold"
+              style={{ color: "var(--brand-tertiary)", fontFamily: "var(--font-syne)" }}
+            >
+              {error}
+            </p>
           )}
 
           <button
             type="submit"
-            disabled={loading || code.length !== 6 || !nickname.trim()}
-            className="rounded-xl bg-blue-600 py-3 text-lg font-bold text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={loading || !isReady}
+            className="w-full rounded-2xl py-4 text-base font-black transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+            style={{
+              background: isReady
+                ? "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)"
+                : "rgba(255,255,255,0.08)",
+              color: "#09090f",
+              fontFamily: "var(--font-syne)",
+              boxShadow: isReady
+                ? "0 4px 28px rgba(0,220,222,0.3)"
+                : "none",
+            }}
           >
-            {loading ? "Joining…" : "Join Game"}
+            {loading ? "Joining…" : "Let's Play! →"}
           </button>
         </form>
       </div>

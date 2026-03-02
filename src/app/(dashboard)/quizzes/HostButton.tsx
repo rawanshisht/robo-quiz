@@ -28,7 +28,13 @@ export default function HostButton({ quizId }: { quizId: string }) {
     <button
       onClick={handleHost}
       disabled={loading}
-      className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+      className="rounded-lg px-3 py-1.5 text-sm font-black transition-all hover:opacity-90 disabled:opacity-40 active:scale-95"
+      style={{
+        background:
+          "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)",
+        color: "#09090f",
+        fontFamily: "var(--font-syne)",
+      }}
     >
       {loading ? "…" : "Host"}
     </button>
