@@ -71,7 +71,7 @@ export default function HostButton({ quizId }: { quizId: string }) {
                 Add a Mini-Game Break?
               </p>
               <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--font-syne)" }}>
-                Every 5 questions, students play a short game. Optional — leave unselected for a standard quiz.
+                Every 3 questions, students play a short game. Optional — leave unselected for a standard quiz.
               </p>
             </div>
 
