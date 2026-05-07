@@ -1,6 +1,7 @@
 "use client";
 
 import type { QuestionEvent } from "@/types";
+import type { ReactNode } from "react";
 
 const OPTION_STYLES = [
   { bg: "#00dcde", color: "#09090f", label: "A" },
@@ -15,6 +16,7 @@ interface Props {
   answered: boolean;
   selectedOptionId: string | null;
   onAnswer: (optionId: string) => void;
+  modeWidget?: ReactNode;
 }
 
 export default function PlayerQuestion({
@@ -23,6 +25,7 @@ export default function PlayerQuestion({
   answered,
   selectedOptionId,
   onAnswer,
+  modeWidget,
 }: Props) {
   const timerPct = (timeRemaining / question.duration) * 100;
   const timerColor =
@@ -124,6 +127,13 @@ export default function PlayerQuestion({
           );
         })}
       </div>
+
+      {/* Mode widget */}
+      {modeWidget && (
+        <div className="px-4 pb-2">
+          {modeWidget}
+        </div>
+      )}
 
       {/* Locked in state */}
       {answered && (

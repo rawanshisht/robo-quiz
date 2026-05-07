@@ -6,6 +6,9 @@ import { getPusherClient } from "@/lib/pusher/client";
 import PlayerLobby from "./PlayerLobby";
 import PlayerQuestion from "./PlayerQuestion";
 import PlayerReveal from "./PlayerReveal";
+import PlayerColorKingdom from "@/components/game-modes/color-kingdom/PlayerColorKingdom";
+import PlayerRobotRun from "@/components/game-modes/robot-run/PlayerRobotRun";
+import PlayerMiniGame from "@/components/mini-games/PlayerMiniGame";
 import type {
   LobbyUpdateEvent,
   QuestionEvent,
@@ -13,9 +16,14 @@ import type {
   EndEvent,
   PauseEvent,
   LeaderboardEntry,
+  TeamAssignedEvent,
+  RobotAssignedEvent,
+  GameMode,
+  MiniGameType,
+  GameBreakStartEvent,
 } from "@/types";
 
-type Phase = "lobby" | "question" | "reveal" | "end";
+type Phase = "lobby" | "question" | "reveal" | "end" | "game-break";
 
 function PauseOverlay() {
   return (
@@ -59,7 +67,7 @@ function PauseOverlay() {
   );
 }
 
-export default function GamePlayer({ code }: { code: string }) {
+export default function GamePlayer({ code, mode = "classic", miniGameType }: { code: string; mode?: GameMode; miniGameType?: MiniGameType | null }) {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [playerId, setPlayerId] = useState("");
@@ -74,6 +82,12 @@ export default function GamePlayer({ code }: { code: string }) {
   const [finalRankings, setFinalRankings] = useState<LeaderboardEntry[]>([]);
 
   const [isPaused, setIsPaused] = useState(false);
+  const [gameBreakData, setGameBreakData] = useState<GameBreakStartEvent | null>(null);
+  const [myTeam, setMyTeam] = useState<"a" | "b" | null>(null);
+  const [teamAName, setTeamAName] = useState("Blue Team");
+  const [teamBName, setTeamBName] = useState("Red Team");
+  const [robotNumber, setRobotNumber] = useState<number | null>(null);
+  const [lastMovement, setLastMovement] = useState<number | null>(null);
   const submittingRef = useRef(false);
   const pausedMsRef = useRef(0);
   const pausedAtRef = useRef<number | null>(null);
@@ -85,9 +99,11 @@ export default function GamePlayer({ code }: { code: string }) {
       router.replace("/play");
       return;
     }
-    const { player_id, nickname: n } = JSON.parse(stored);
+    const { player_id, nickname: n, team, robot_number } = JSON.parse(stored);
     setPlayerId(player_id);
     setNickname(n);
+    if (team) setMyTeam(team);
+    if (robot_number) setRobotNumber(robot_number);
   }, [code, router]);
 
   // Reset pause tracking when a new question starts
@@ -150,15 +166,31 @@ export default function GamePlayer({ code }: { code: string }) {
       setPhase("end");
     });
 
+    channel.bind("game:break:start", (data: GameBreakStartEvent) => {
+      setGameBreakData(data);
+      setPhase("game-break");
+    });
+
     channel.bind("game:pause", (data: PauseEvent) => {
       setIsPaused(data.paused);
+    });
+
+    channel.bind("game:teams:assigned", (data: TeamAssignedEvent) => {
+      setTeamAName(data.teamAName);
+      setTeamBName(data.teamBName);
+    });
+
+    channel.bind("game:robots:assigned", (data: RobotAssignedEvent) => {
+      // robot number will be received here but position tracking handled by PlayerRobotRun
+      const me = data.assignments.find((a) => a.playerId === playerId);
+      if (me) setRobotNumber(me.robotNumber);
     });
 
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(`game-${code}`);
     };
-  }, [code]);
+  }, [code, playerId]);
 
   async function handleAnswer(optionId: string) {
     if (answered || submittingRef.current || !playerId) return;
@@ -175,10 +207,21 @@ export default function GamePlayer({ code }: { code: string }) {
       const data = await res.json();
       if (res.ok) {
         setPointsEarned(data.points_earned ?? 0);
+        if (data.tiles_moved != null) setLastMovement(data.tiles_moved);
       }
     } catch {
       // Answer recorded optimistically; reveal event will show result
     }
+  }
+
+  if (phase === "game-break" && gameBreakData && playerId) {
+    return (
+      <PlayerMiniGame
+        code={code}
+        playerId={playerId}
+        breakData={gameBreakData}
+      />
+    );
   }
 
   if (phase === "lobby") {
@@ -192,6 +235,23 @@ export default function GamePlayer({ code }: { code: string }) {
   }
 
   if (phase === "question" && currentQuestion) {
+    const modeWidget =
+      mode === "color-kingdom" && playerId ? (
+        <PlayerColorKingdom
+          code={code}
+          playerId={playerId}
+          myTeam={myTeam}
+          teamAName={teamAName}
+          teamBName={teamBName}
+        />
+      ) : mode === "robot-run" && playerId ? (
+        <PlayerRobotRun
+          code={code}
+          playerId={playerId}
+          movementFeedback={lastMovement}
+        />
+      ) : null;
+
     return (
       <>
         <PlayerQuestion
@@ -200,6 +260,7 @@ export default function GamePlayer({ code }: { code: string }) {
           answered={answered}
           selectedOptionId={selectedOptionId}
           onAnswer={handleAnswer}
+          modeWidget={modeWidget}
         />
         {isPaused && <PauseOverlay />}
       </>
@@ -207,6 +268,23 @@ export default function GamePlayer({ code }: { code: string }) {
   }
 
   if (phase === "reveal" && revealData) {
+    const modeWidget =
+      mode === "color-kingdom" && playerId ? (
+        <PlayerColorKingdom
+          code={code}
+          playerId={playerId}
+          myTeam={myTeam}
+          teamAName={teamAName}
+          teamBName={teamBName}
+        />
+      ) : mode === "robot-run" && playerId ? (
+        <PlayerRobotRun
+          code={code}
+          playerId={playerId}
+          movementFeedback={lastMovement}
+        />
+      ) : null;
+
     return (
       <>
         <PlayerReveal
@@ -214,6 +292,7 @@ export default function GamePlayer({ code }: { code: string }) {
           selectedOptionId={selectedOptionId}
           pointsEarned={pointsEarned}
           nickname={nickname}
+          modeWidget={modeWidget}
         />
         {isPaused && <PauseOverlay />}
       </>

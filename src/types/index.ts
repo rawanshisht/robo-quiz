@@ -38,6 +38,10 @@ export interface Option {
 
 export type SessionStatus = "lobby" | "active" | "finished";
 
+export type GameMode = "classic" | "color-kingdom" | "robot-run";
+
+export type MiniGameType = "flying-math" | "typing" | "robocody";
+
 export interface GameSession {
   id: string;
   quiz_id: string;
@@ -48,13 +52,41 @@ export interface GameSession {
   is_paused: boolean;
   created_at: string;
   question_started_at: string | null;
+  mode: GameMode;
+  mode_state: unknown | null;
+  team_a_name: string;
+  team_b_name: string;
+  mini_game_type: MiniGameType | null;
 }
+
+export interface RobocodyQuestion {
+  id: string;
+  text: string;
+  options: { id: string; text: string }[];
+  correctId: string;
+}
+
+export interface GameBreakStartEvent {
+  gameType: MiniGameType;
+  level: number;
+  robocodyQuestions?: RobocodyQuestion[];
+}
+
+export interface MiniGameResult {
+  finalScore: number;
+  level: number;
+  gameType: MiniGameType;
+  completed: boolean;
+}
+
 
 export interface GamePlayer {
   id: string;
   session_id: string;
   nickname: string;
   score: number;
+  team: "a" | "b" | null;
+  robot_number: number | null;
 }
 
 // ── Pusher event payloads ──────────────────────────────────────────────────
@@ -99,4 +131,58 @@ export interface LeaderboardEntry {
 
 export interface EndEvent {
   final_rankings: LeaderboardEntry[];
+}
+
+// ── Game mode types ────────────────────────────────────────────────────────
+
+export interface TeamAssignedEvent {
+  assignments: { playerId: string; nickname: string; team: "a" | "b" }[];
+  teamAName: string;
+  teamBName: string;
+}
+
+export interface RobotAssignedEvent {
+  assignments: { playerId: string; nickname: string; robotNumber: number }[];
+}
+
+// Color Kingdom
+export interface TileState {
+  index: number;
+  owner: "a" | "b" | null;
+}
+
+export interface TerritoryUpdateEvent {
+  grid: TileState[];
+  scoreA: number;
+  scoreB: number;
+}
+
+export interface PlacementPromptEvent {
+  playerId: string;
+  validTiles: number[];
+  expiresAt: number; // unix ms
+}
+
+export interface PlacementConfirmEvent {
+  tileIndex: number;
+  team: "a" | "b";
+  playerId: string;
+}
+
+// Robot Run
+export interface RobotPosition {
+  playerId: string;
+  nickname: string;
+  robotNumber: number;
+  tile: number;
+}
+
+export interface RaceUpdateEvent {
+  positions: RobotPosition[];
+}
+
+export interface RaceFinishEvent {
+  winnerId: string;
+  winnerName: string;
+  winnerRobotNumber: number;
 }

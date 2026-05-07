@@ -1,5 +1,5 @@
 import { sql } from "./index";
-import type { GameSession, GamePlayer } from "@/types";
+import type { GameMode, GameSession, GamePlayer, MiniGameType } from "@/types";
 
 const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -12,7 +12,9 @@ function generateRoomCode(): string {
 
 export async function createSession(
   quizId: string,
-  hostId: string
+  hostId: string,
+  mode: GameMode = "classic",
+  miniGameType: MiniGameType | null = null
 ): Promise<GameSession> {
   let roomCode: string = "";
   let attempts = 0;
@@ -26,9 +28,10 @@ export async function createSession(
   }
 
   const rows = await sql`
-    INSERT INTO game_sessions (quiz_id, host_id, room_code)
-    VALUES (${quizId}, ${hostId}, ${roomCode})
-    RETURNING id, quiz_id, host_id, room_code, status, current_q, is_paused, created_at, question_started_at
+    INSERT INTO game_sessions (quiz_id, host_id, room_code, mode, mini_game_type)
+    VALUES (${quizId}, ${hostId}, ${roomCode}, ${mode}, ${miniGameType})
+    RETURNING id, quiz_id, host_id, room_code, status, current_q, is_paused, created_at,
+              question_started_at, mode, mode_state, team_a_name, team_b_name, mini_game_type
   `;
   return rows[0] as GameSession;
 }
@@ -37,11 +40,28 @@ export async function getSessionByCode(
   code: string
 ): Promise<GameSession | null> {
   const rows = await sql`
-    SELECT id, quiz_id, host_id, room_code, status, current_q, is_paused, created_at, question_started_at
+    SELECT id, quiz_id, host_id, room_code, status, current_q, is_paused, created_at,
+           question_started_at, mode, mode_state, team_a_name, team_b_name, mini_game_type
     FROM game_sessions
     WHERE room_code = ${code.toUpperCase()}
   `;
   return (rows[0] as GameSession) ?? null;
+}
+
+export async function setBreakPendingQuestion(
+  sessionId: string,
+  nextIndex: number
+): Promise<void> {
+  await sql`UPDATE game_sessions SET current_q = ${nextIndex} WHERE id = ${sessionId}`;
+}
+
+export async function setModeState(
+  sessionId: string,
+  state: unknown
+): Promise<void> {
+  await sql`
+    UPDATE game_sessions SET mode_state = ${JSON.stringify(state)}::jsonb WHERE id = ${sessionId}
+  `;
 }
 
 export async function addPlayer(
@@ -51,16 +71,34 @@ export async function addPlayer(
   const rows = await sql`
     INSERT INTO game_players (session_id, nickname)
     VALUES (${sessionId}, ${nickname})
-    RETURNING id, session_id, nickname, score
+    RETURNING id, session_id, nickname, score, team, robot_number
   `;
   return rows[0] as GamePlayer;
+}
+
+export async function assignTeams(
+  sessionId: string,
+  assignments: { playerId: string; team: "a" | "b" }[]
+): Promise<void> {
+  for (const { playerId, team } of assignments) {
+    await sql`UPDATE game_players SET team = ${team} WHERE id = ${playerId}`;
+  }
+}
+
+export async function assignRobotNumbers(
+  sessionId: string,
+  assignments: { playerId: string; robotNumber: number }[]
+): Promise<void> {
+  for (const { playerId, robotNumber } of assignments) {
+    await sql`UPDATE game_players SET robot_number = ${robotNumber} WHERE id = ${playerId}`;
+  }
 }
 
 export async function getPlayersInSession(
   sessionId: string
 ): Promise<GamePlayer[]> {
   const rows = await sql`
-    SELECT id, session_id, nickname, score
+    SELECT id, session_id, nickname, score, team, robot_number
     FROM game_players
     WHERE session_id = ${sessionId}
     ORDER BY nickname ASC

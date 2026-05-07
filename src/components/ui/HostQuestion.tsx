@@ -1,6 +1,7 @@
 "use client";
 
 import type { QuestionEvent } from "@/types";
+import type { ReactNode } from "react";
 
 const OPTION_STYLES = [
   { bg: "#00dcde", color: "#09090f", label: "A" },
@@ -18,6 +19,7 @@ interface Props {
   onRevealNow: () => void;
   onTogglePause: () => void;
   onEndEarly: () => void;
+  modeWidget?: ReactNode;
 }
 
 export default function HostQuestion({
@@ -29,6 +31,7 @@ export default function HostQuestion({
   onRevealNow,
   onTogglePause,
   onEndEarly,
+  modeWidget,
 }: Props) {
   const timerColor =
     timeRemaining > 10 ? "#22c55e" : timeRemaining > 5 ? "#f59e0b" : "#ef4444";
@@ -108,6 +111,13 @@ export default function HostQuestion({
             </div>
           ))}
         </div>
+
+        {/* Mode widget (territory grid / race track) */}
+        {modeWidget && (
+          <div className="mt-8 w-full max-w-2xl">
+            {modeWidget}
+          </div>
+        )}
       </div>
 
       {/* Bottom controls */}

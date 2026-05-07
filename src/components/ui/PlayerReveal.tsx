@@ -1,12 +1,14 @@
 "use client";
 
 import type { RevealEvent } from "@/types";
+import type { ReactNode } from "react";
 
 interface Props {
   reveal: RevealEvent;
   selectedOptionId: string | null;
   pointsEarned: number;
   nickname: string;
+  modeWidget?: ReactNode;
 }
 
 export default function PlayerReveal({
@@ -14,6 +16,7 @@ export default function PlayerReveal({
   selectedOptionId,
   pointsEarned,
   nickname,
+  modeWidget,
 }: Props) {
   const wasCorrect =
     selectedOptionId !== null &&
@@ -118,6 +121,13 @@ export default function PlayerReveal({
               of {totalPlayers}
             </span>
           </p>
+        </div>
+      )}
+
+      {/* Mode widget */}
+      {modeWidget && (
+        <div className="w-full max-w-sm mb-4">
+          {modeWidget}
         </div>
       )}
 

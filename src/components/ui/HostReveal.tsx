@@ -1,25 +1,49 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { RevealEvent, QuestionEvent } from "@/types";
+import type { ReactNode } from "react";
 
 interface Props {
   reveal: RevealEvent;
   question: QuestionEvent;
   isPaused: boolean;
+  allAnswered?: boolean;
   onNext: () => void;
   onTogglePause: () => void;
   onEndEarly: () => void;
+  modeWidget?: ReactNode;
 }
 
 export default function HostReveal({
   reveal,
   question,
   isPaused,
+  allAnswered = false,
   onNext,
   onTogglePause,
   onEndEarly,
+  modeWidget,
 }: Props) {
   const isLastQuestion = question.index + 1 >= question.total;
+  const autoNextSecs = allAnswered ? 3 : 8;
+  const [countdown, setCountdown] = useState(autoNextSecs);
+  const calledRef = useRef(false);
+  const onNextRef = useRef(onNext);
+  useEffect(() => { onNextRef.current = onNext; }, [onNext]);
+
+  useEffect(() => {
+    if (isPaused) return;
+    if (countdown <= 0) {
+      if (!calledRef.current) {
+        calledRef.current = true;
+        onNextRef.current();
+      }
+      return;
+    }
+    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [countdown, isPaused]);
 
   return (
     <div className="min-h-screen text-white flex flex-col" style={{ background: "var(--player-bg)" }}>
@@ -58,6 +82,13 @@ export default function HostReveal({
               ?.text ?? "—"}
           </div>
         </div>
+
+        {/* Mode widget */}
+        {modeWidget && (
+          <div className="mb-8 w-full max-w-2xl">
+            {modeWidget}
+          </div>
+        )}
 
         {/* Leaderboard */}
         <div className="w-full max-w-2xl">
@@ -137,7 +168,7 @@ export default function HostReveal({
           {isPaused ? "▶" : "⏸"}
         </button>
         <button
-          onClick={onNext}
+          onClick={() => { calledRef.current = true; onNext(); }}
           className="t-button uppercase flex-1 rounded-xl py-4 transition-all hover:opacity-90 active:scale-[0.98]"
           style={{
             background:
@@ -146,7 +177,7 @@ export default function HostReveal({
             fontFamily: "var(--font-syne)",
           }}
         >
-          {isLastQuestion ? "End Game" : "Next Question →"}
+          {isLastQuestion ? `End Game (${countdown})` : `Next Question (${countdown})`}
         </button>
         <button
           onClick={onEndEarly}

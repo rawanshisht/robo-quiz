@@ -4,6 +4,69 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { QuestionType } from "@/types";
 
+const CSV_TEMPLATE = [
+  "question,option_a,option_b,option_c,option_d,correct",
+  '"What is the capital of France?","London","Berlin","Paris","Madrid","C"',
+  '"Is the Earth flat?","True","False","","","B"',
+  '"What is 7 × 8?","54","56","58","64","B"',
+].join("\n");
+
+function splitCSVRow(row: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (ch === '"') {
+      if (inQuotes && row[i + 1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === "," && !inQuotes) {
+      result.push(current); current = "";
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function parseCSVToQuestions(text: string): { questions: QuestionDraft[]; errors: string[] } {
+  const lines = text.trim().split(/\r?\n/);
+  const errors: string[] = [];
+  const questions: QuestionDraft[] = [];
+  if (lines.length < 2) return { questions, errors: ["File is empty or has no data rows."] };
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cols = splitCSVRow(line);
+    const questionText = cols[0]?.trim();
+    const correctRaw = cols[cols.length - 1]?.trim().toUpperCase();
+    const optionCols = cols.slice(1, cols.length - 1);
+
+    if (!questionText) { errors.push(`Row ${i + 1}: empty question`); continue; }
+
+    const options: { text: string; is_correct: boolean }[] = [];
+    for (let j = 0; j < Math.min(optionCols.length, 4); j++) {
+      const t = optionCols[j]?.trim();
+      if (!t) break;
+      options.push({ text: t, is_correct: correctRaw === String.fromCharCode(65 + j) });
+    }
+
+    if (options.length < 2) { errors.push(`Row ${i + 1}: need at least 2 options`); continue; }
+    if (!options.some((o) => o.is_correct)) { errors.push(`Row ${i + 1}: no correct answer (use A/B/C/D)`); continue; }
+
+    const isTrueFalse =
+      options.length === 2 &&
+      options[0].text.toLowerCase() === "true" &&
+      options[1].text.toLowerCase() === "false";
+
+    questions.push({ type: isTrueFalse ? "true_false" : "mcq", text: questionText, image_url: null, options });
+  }
+
+  return { questions, errors };
+}
+
 interface OptionDraft {
   text: string;
   is_correct: boolean;
@@ -57,7 +120,9 @@ export default function QuizBuilder({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const fileRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const csvRef = useRef<HTMLInputElement>(null);
 
   function addQuestion() {
     setQuestions((prev) => [
@@ -140,6 +205,28 @@ export default function QuizBuilder({
     );
   }
 
+  function handleCsvUpload(file: File) {
+    setCsvErrors([]);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const { questions: parsed, errors } = parseCSVToQuestions(text);
+      if (errors.length) setCsvErrors(errors);
+      if (parsed.length) setQuestions((prev) => [...prev, ...parsed]);
+      if (!parsed.length && !errors.length) setCsvErrors(["No valid questions found in the file."]);
+    };
+    reader.readAsText(file);
+    if (csvRef.current) csvRef.current.value = "";
+  }
+
+  function downloadTemplate() {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "quiz-template.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function removeImage(qIndex: number) {
     setQuestions((prev) =>
       prev.map((q, i) => (i === qIndex ? { ...q, image_url: null } : q))
@@ -197,8 +284,9 @@ export default function QuizBuilder({
     setSaving(false);
 
     if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Failed to save quiz");
+      let msg = "Failed to save quiz";
+      try { msg = (await res.json()).error ?? msg; } catch { /* non-JSON error body */ }
+      setError(msg);
       return;
     }
 
@@ -453,29 +541,72 @@ export default function QuizBuilder({
         </div>
       ))}
 
-      {/* Add question */}
-      <button
-        onClick={addQuestion}
-        className="rounded-xl border-2 border-dashed py-5 text-sm font-semibold transition-all"
-        style={{
-          borderColor: "var(--border)",
-          color: "var(--text-muted)",
-          fontFamily: "var(--font-syne)",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = "var(--brand-primary)";
-          (e.currentTarget as HTMLElement).style.color = "var(--brand-primary)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-          (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-        }}
-      >
-        + Add question
-        {questions.length > 0 && (
-          <span className="ml-2 opacity-50">({questions.length} so far)</span>
-        )}
-      </button>
+      {/* Add question + CSV import */}
+      <div className="flex gap-2">
+        <button
+          onClick={addQuestion}
+          className="flex-1 rounded-xl border-2 border-dashed py-5 text-sm font-semibold transition-all"
+          style={{ borderColor: "var(--border)", color: "var(--text-muted)", fontFamily: "var(--font-syne)" }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--brand-primary)";
+            (e.currentTarget as HTMLElement).style.color = "var(--brand-primary)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+            (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+          }}
+        >
+          + Add question
+          {questions.length > 0 && (
+            <span className="ml-2 opacity-50">({questions.length} so far)</span>
+          )}
+        </button>
+
+        <div className="flex flex-col gap-1.5">
+          <label
+            className="flex items-center gap-2 rounded-xl border-2 border-dashed px-4 py-2 text-sm font-semibold cursor-pointer transition-all h-full justify-center"
+            style={{ borderColor: "var(--border)", color: "var(--text-muted)", fontFamily: "var(--font-syne)", minWidth: 130 }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--brand-secondary)";
+              (e.currentTarget as HTMLElement).style.color = "var(--brand-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+              (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+            }}
+          >
+            ↑ Import CSV
+            <input
+              ref={csvRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsvUpload(f); }}
+            />
+          </label>
+          <button
+            onClick={downloadTemplate}
+            className="text-xs text-center transition-opacity hover:opacity-80"
+            style={{ color: "var(--text-muted)", fontFamily: "var(--font-syne)" }}
+          >
+            ↓ template
+          </button>
+        </div>
+      </div>
+
+      {csvErrors.length > 0 && (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
+          style={{ background: "rgba(251,146,60,0.08)", borderColor: "rgba(251,146,60,0.25)", fontFamily: "var(--font-syne)" }}
+        >
+          <p className="font-semibold mb-1" style={{ color: "#fdba74" }}>CSV import warnings:</p>
+          <ul className="flex flex-col gap-0.5">
+            {csvErrors.map((e, i) => (
+              <li key={i} style={{ color: "#fdba74", opacity: 0.85 }}>• {e}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {error && (
         <p

@@ -1,15 +1,18 @@
 import { auth } from "@/lib/auth";
 import {
   getSessionByCode,
+  getPlayersInSession,
   advanceQuestion,
   finishSession,
   deleteSessionData,
   getLeaderboard,
+  setBreakPendingQuestion,
 } from "@/lib/db/sessions";
 import { getQuizById } from "@/lib/db/quizzes";
 import { pusherServer } from "@/lib/pusher/server";
+import { getAdapter } from "@/lib/game-modes/registry";
 import { NextResponse } from "next/server";
-import type { QuestionEvent, EndEvent } from "@/types";
+import type { QuestionEvent, EndEvent, GameBreakStartEvent } from "@/types";
 
 export async function POST(
   _request: Request,
@@ -35,13 +38,48 @@ export async function POST(
   const upperCode = code.toUpperCase();
   const nextIndex = session.current_q + 1;
 
-  if (nextIndex >= quiz.questions.length) {
-    // Game over
+  // Check for game break (every 5 questions, if mini game is configured)
+  const shouldBreak =
+    !!session.mini_game_type &&
+    nextIndex % 3 === 0 &&
+    nextIndex < quiz.questions.length;
+
+  if (shouldBreak) {
+    await setBreakPendingQuestion(session.id, nextIndex);
+    const level = Math.min(5, nextIndex / 5);
+    const event: GameBreakStartEvent = { gameType: session.mini_game_type!, level };
+
+    if (session.mini_game_type === "robocody") {
+      event.robocodyQuestions = quiz.questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        options: q.options.map(({ id, text }) => ({ id, text })),
+        correctId: q.options.find((o) => o.is_correct)!.id,
+      }));
+    }
+
+    await pusherServer.trigger(`game-${upperCode}`, "game:break:start", event);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Ask adapter if the mode wants to end early (e.g. Robot Run race win)
+  const adapter = getAdapter(session.mode);
+  const currentState = session.mode_state ?? {};
+  const { finished: modeFinished } = await adapter.onQuestionEnd(session, currentState);
+
+  const isLastQuestion = nextIndex >= quiz.questions.length;
+
+  if (isLastQuestion || modeFinished) {
+    // Game over — get result from adapter for mode-specific winner info
+    const players = await getPlayersInSession(session.id);
+    const gameResult = await adapter.onGameEnd(session, players, currentState);
     const leaderboard = await getLeaderboard(session.id);
-    const endEvent: EndEvent = { final_rankings: leaderboard };
+    const endEvent: EndEvent & { mode_result?: unknown } = {
+      final_rankings: leaderboard,
+      mode_result: gameResult,
+    };
     await pusherServer.trigger(`game-${upperCode}`, "game:end", endEvent);
     await finishSession(session.id);
-    // Delete ephemeral data after sending event
     await deleteSessionData(session.id);
   } else {
     // Next question
