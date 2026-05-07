@@ -8,12 +8,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { quiz_id } = await request.json();
+  const { quiz_id, mode, mini_game_type } = await request.json();
   if (!quiz_id) {
     return NextResponse.json({ error: "quiz_id is required" }, { status: 400 });
   }
 
-  const gameSession = await createSession(quiz_id, session.user.id);
+  const gameSession = await createSession(quiz_id, session.user.id, mode ?? "classic", mini_game_type ?? null);
   return NextResponse.json({
     room_code: gameSession.room_code,
     session_id: gameSession.id,

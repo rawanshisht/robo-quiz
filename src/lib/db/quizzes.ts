@@ -92,6 +92,7 @@ export async function updateQuiz(
   }[]
 ): Promise<void> {
   await sql`UPDATE quizzes SET title = ${title}, updated_at = NOW() WHERE id = ${id}`;
+  await sql`DELETE FROM game_answers WHERE question_id IN (SELECT id FROM questions WHERE quiz_id = ${id})`;
   await sql`DELETE FROM questions WHERE quiz_id = ${id}`;
 
   for (const q of questions) {
@@ -112,5 +113,18 @@ export async function updateQuiz(
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
+  // Remove answers referencing this quiz's questions (no cascade on question_id FK)
+  await sql`
+    DELETE FROM game_answers
+    WHERE question_id IN (SELECT id FROM questions WHERE quiz_id = ${id})
+  `;
+  // Remove sessions — cascades to game_players and game_answers via player_id
+  await sql`DELETE FROM game_sessions WHERE quiz_id = ${id}`;
+  // Remove options then questions
+  await sql`
+    DELETE FROM options
+    WHERE question_id IN (SELECT id FROM questions WHERE quiz_id = ${id})
+  `;
+  await sql`DELETE FROM questions WHERE quiz_id = ${id}`;
   await sql`DELETE FROM quizzes WHERE id = ${id}`;
 }

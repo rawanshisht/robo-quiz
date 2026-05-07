@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
-import { getSessionByCode, getLeaderboard } from "@/lib/db/sessions";
+import { getSessionByCode, getLeaderboard, setModeState } from "@/lib/db/sessions";
 import { getQuizById } from "@/lib/db/quizzes";
 import { pusherServer } from "@/lib/pusher/server";
+import { getAdapter } from "@/lib/game-modes/registry";
 import { NextResponse } from "next/server";
 import type { RevealEvent } from "@/types";
 
@@ -29,12 +30,24 @@ export async function POST(
 
   const correctOption = question.options.find((o) => o.is_correct);
   const leaderboard = await getLeaderboard(session.id);
+  const upperCode = code.toUpperCase();
 
   const revealEvent: RevealEvent = {
     correct_option_id: correctOption?.id ?? "",
     leaderboard,
   };
+  await pusherServer.trigger(`game-${upperCode}`, "game:reveal", revealEvent);
 
-  await pusherServer.trigger(`game-${code.toUpperCase()}`, "game:reveal", revealEvent);
+  // Run mode adapter onQuestionReveal hook
+  const adapter = getAdapter(session.mode);
+  const currentState = session.mode_state ?? {};
+  const { stateUpdate, events } = await adapter.onQuestionReveal(session, currentState);
+  if (Object.keys(stateUpdate).length > 0) {
+    await setModeState(session.id, { ...currentState, ...stateUpdate });
+  }
+  for (const e of events) {
+    await pusherServer.trigger(`game-${upperCode}`, e.event, e.data);
+  }
+
   return NextResponse.json({ ok: true });
 }

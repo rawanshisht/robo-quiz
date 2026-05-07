@@ -28,6 +28,8 @@ export default async function HostPage({
       quizTitle={quiz.title}
       questionCount={quiz.questions.length}
       initialPlayers={players.map((p) => p.nickname)}
+      mode={session.mode}
+      miniGameType={session.mini_game_type}
     />
   );
 }

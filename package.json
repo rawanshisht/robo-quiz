@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx --env-file=.env.local scripts/seed-tutor.ts"
+    "seed": "tsx --env-file=.env.local scripts/seed-tutor.ts",
+    "migrate": "tsx --env-file=.env.local scripts/migrate-game-modes.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

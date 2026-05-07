@@ -1,7 +1,13 @@
 import { auth } from "@/lib/auth";
-import { getSessionByCode, startQuestion } from "@/lib/db/sessions";
+import {
+  getSessionByCode,
+  getPlayersInSession,
+  startQuestion,
+  setModeState,
+} from "@/lib/db/sessions";
 import { getQuizById } from "@/lib/db/quizzes";
 import { pusherServer } from "@/lib/pusher/server";
+import { getAdapter } from "@/lib/game-modes/registry";
 import { NextResponse } from "next/server";
 import type { QuestionEvent } from "@/types";
 
@@ -26,12 +32,23 @@ export async function POST(
     return NextResponse.json({ error: "Quiz has no questions" }, { status: 400 });
   }
 
+  const players = await getPlayersInSession(session.id);
+  const upperCode = code.toUpperCase();
+
+  // Run mode adapter onGameStart (team assignment, initial state, etc.)
+  const adapter = getAdapter(session.mode);
+  const { state, events } = await adapter.onGameStart(session, players);
+  await setModeState(session.id, state);
+  for (const e of events) {
+    await pusherServer.trigger(`game-${upperCode}`, e.event, e.data);
+  }
+
   await startQuestion(session.id, 0);
 
   const q = quiz.questions[0];
   const started_at = new Date().toISOString();
 
-  const event: QuestionEvent = {
+  const questionEvent: QuestionEvent = {
     index: 0,
     total: quiz.questions.length,
     text: q.text,
@@ -42,6 +59,6 @@ export async function POST(
     started_at,
   };
 
-  await pusherServer.trigger(`game-${code.toUpperCase()}`, "game:question", event);
+  await pusherServer.trigger(`game-${upperCode}`, "game:question", questionEvent);
   return NextResponse.json({ ok: true });
 }

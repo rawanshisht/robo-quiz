@@ -8,8 +8,13 @@ export default function DeleteQuizButton({ id }: { id: string }) {
   const [confirming, setConfirming] = useState(false);
 
   async function handleDelete() {
-    await fetch(`/api/quizzes/${id}`, { method: "DELETE" });
-    router.refresh();
+    const res = await fetch(`/api/quizzes/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      alert("Failed to delete quiz. Please try again.");
+      setConfirming(false);
+    }
   }
 
   if (confirming) {

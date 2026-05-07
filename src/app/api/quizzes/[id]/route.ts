@@ -34,7 +34,12 @@ export async function PUT(
     return NextResponse.json({ error: "At least one question is required" }, { status: 400 });
   }
 
-  await updateQuiz(id, title.trim(), questions);
+  try {
+    await updateQuiz(id, title.trim(), questions);
+  } catch (err) {
+    console.error("updateQuiz failed:", err);
+    return NextResponse.json({ error: "Failed to save quiz" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
 
