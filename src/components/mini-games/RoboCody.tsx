@@ -10,7 +10,6 @@ interface Ghost {
 }
 
 type GameState = "playing" | "won" | "dead";
-type QuestionPhase = "reading" | "answering" | null;
 
 const GRID_SIZES: Record<number, number> = { 1: 9, 2: 9, 3: 11, 4: 11, 5: 13 };
 const GHOST_COUNTS: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3 };
@@ -18,17 +17,6 @@ const GHOST_SPEEDS: Record<number, number> = { 1: 900, 2: 750, 3: 600, 4: 420, 5
 const CELL_SIZES: Record<number, number> = { 9: 34, 11: 28, 13: 24 };
 const GHOST_COLORS = ["#ff4444", "#ff00bf", "#ff9752"];
 const TARGET_PELLETS = 15;
-
-const DEFAULT_QUESTIONS: RobocodyQuestion[] = [
-  { id: "d1", text: "What is 5 + 3?", options: [{ id: "a", text: "7" }, { id: "b", text: "8" }, { id: "c", text: "9" }, { id: "d", text: "6" }], correctId: "b" },
-  { id: "d2", text: "What is 6 × 4?", options: [{ id: "a", text: "20" }, { id: "b", text: "22" }, { id: "c", text: "24" }, { id: "d", text: "18" }], correctId: "c" },
-  { id: "d3", text: "What is 15 − 7?", options: [{ id: "a", text: "8" }, { id: "b", text: "6" }, { id: "c", text: "9" }, { id: "d", text: "7" }], correctId: "a" },
-  { id: "d4", text: "What is 9 × 3?", options: [{ id: "a", text: "21" }, { id: "b", text: "27" }, { id: "c", text: "24" }, { id: "d", text: "30" }], correctId: "b" },
-  { id: "d5", text: "What is 36 ÷ 6?", options: [{ id: "a", text: "5" }, { id: "b", text: "7" }, { id: "c", text: "6" }, { id: "d", text: "4" }], correctId: "c" },
-  { id: "d6", text: "What is 12 + 9?", options: [{ id: "a", text: "19" }, { id: "b", text: "22" }, { id: "c", text: "21" }, { id: "d", text: "20" }], correctId: "c" },
-  { id: "d7", text: "What is 7 × 8?", options: [{ id: "a", text: "54" }, { id: "b", text: "56" }, { id: "c", text: "48" }, { id: "d", text: "63" }], correctId: "b" },
-  { id: "d8", text: "What is 100 − 37?", options: [{ id: "a", text: "63" }, { id: "b", text: "67" }, { id: "c", text: "73" }, { id: "d", text: "57" }], correctId: "a" },
-];
 
 function buildGrid(gridSize: number): { cells: ("empty" | "pellet")[]; robotStart: { row: number; col: number } } {
   const total = gridSize * gridSize;
@@ -72,11 +60,10 @@ interface Props {
   onComplete: (result: MiniGameResult) => void;
 }
 
-export default function RoboCody({ gameLevel, questions, onComplete }: Props) {
+export default function RoboCody({ gameLevel, onComplete }: Props) {
   const level = Math.min(5, Math.max(1, gameLevel));
   const gridSize = GRID_SIZES[level];
   const cellSize = CELL_SIZES[gridSize];
-  const questionPool = (questions && questions.length > 0 ? questions : DEFAULT_QUESTIONS);
 
   const [cells, setCells] = useState<("empty" | "pellet")[]>([]);
   const [robot, setRobot] = useState({ row: 0, col: 0 });
@@ -84,38 +71,62 @@ export default function RoboCody({ gameLevel, questions, onComplete }: Props) {
   const [pelletsEaten, setPelletsEaten] = useState(0);
   const [score, setScore] = useState(0);
   const [gameState, setGameState] = useState<GameState>("playing");
-  const [currentQuestion, setCurrentQuestion] = useState<RobocodyQuestion | null>(null);
-  const [currentPelletIdx, setCurrentPelletIdx] = useState<number | null>(null);
-  const [questionPhase, setQuestionPhase] = useState<QuestionPhase>(null);
-  const [wrongFlash, setWrongFlash] = useState(false);
 
   const scoreRef = useRef(0);
   const pelletsRef = useRef(0);
   const doneRef = useRef(false);
   const robotRef = useRef({ row: 0, col: 0 });
-  const questionsUsedRef = useRef<Set<string>>(new Set());
+  const cellsRef = useRef<("empty" | "pellet")[]>([]);
 
   // Init grid
   useEffect(() => {
     const { cells: c, robotStart } = buildGrid(gridSize);
+    cellsRef.current = c;
     setCells(c);
     setRobot(robotStart);
     robotRef.current = robotStart;
   }, [gridSize]);
 
-  function getNextQuestion(): RobocodyQuestion {
-    const unused = questionPool.filter((q) => !questionsUsedRef.current.has(q.id));
-    const pool = unused.length > 0 ? unused : questionPool;
-    if (unused.length === 0) questionsUsedRef.current.clear();
-    const q = pool[Math.floor(Math.random() * pool.length)];
-    questionsUsedRef.current.add(q.id);
-    return q;
+  function eatPellet(idx: number) {
+    if (cellsRef.current[idx] !== "pellet") return;
+    const next = [...cellsRef.current];
+    next[idx] = "empty";
+    cellsRef.current = next;
+    setCells(next);
+
+    const newPellets = pelletsRef.current + 1;
+    pelletsRef.current = newPellets;
+    scoreRef.current += 20;
+    setPelletsEaten(newPellets);
+    setScore(scoreRef.current);
+
+    if (newPellets === 3) {
+      setGhosts((prev) => {
+        if (prev.length > 0) return prev;
+        const gc = GHOST_COUNTS[level];
+        const corners = [
+          { id: 0, row: 0, col: 0 },
+          { id: 1, row: 0, col: gridSize - 1 },
+          { id: 2, row: gridSize - 1, col: 0 },
+          { id: 3, row: gridSize - 1, col: gridSize - 1 },
+        ];
+        return corners.slice(0, gc);
+      });
+    }
+
+    if (newPellets >= TARGET_PELLETS && !doneRef.current) {
+      doneRef.current = true;
+      setGameState("won");
+      setTimeout(() => {
+        onComplete({ finalScore: scoreRef.current, level, gameType: "robocody", completed: true });
+      }, 1500);
+    }
   }
 
   // Keyboard movement
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
-      if (gameState !== "playing" || questionPhase !== null) return;
+      if (gameState !== "playing") return;
       const dirs: Record<string, { dr: number; dc: number }> = {
         ArrowUp: { dr: -1, dc: 0 }, w: { dr: -1, dc: 0 },
         ArrowDown: { dr: 1, dc: 0 }, s: { dr: 1, dc: 0 },
@@ -131,22 +142,12 @@ export default function RoboCody({ gameLevel, questions, onComplete }: Props) {
         const nc = Math.max(0, Math.min(gridSize - 1, prev.col + dir.dc));
         if (nr === prev.row && nc === prev.col) return prev;
         robotRef.current = { row: nr, col: nc };
-
         const idx = nr * gridSize + nc;
-        setCells((c) => {
-          if (c[idx] === "pellet") {
-            const q = getNextQuestion();
-            setCurrentPelletIdx(idx);
-            setCurrentQuestion(q);
-            setQuestionPhase("reading");
-            setTimeout(() => setQuestionPhase("answering"), 1600);
-          }
-          return c;
-        });
+        if (cellsRef.current[idx] === "pellet") eatPellet(idx);
         return { row: nr, col: nc };
       });
     },
-    [gameState, questionPhase, gridSize]
+    [gameState, gridSize]
   );
 
   useEffect(() => {
@@ -180,77 +181,19 @@ export default function RoboCody({ gameLevel, questions, onComplete }: Props) {
 
   // D-pad move handler (mobile)
   function dpadMove(dr: number, dc: number) {
-    if (gameState !== "playing" || questionPhase !== null) return;
+    if (gameState !== "playing") return;
     setRobot((prev) => {
       const nr = Math.max(0, Math.min(gridSize - 1, prev.row + dr));
       const nc = Math.max(0, Math.min(gridSize - 1, prev.col + dc));
       if (nr === prev.row && nc === prev.col) return prev;
       robotRef.current = { row: nr, col: nc };
-
       const idx = nr * gridSize + nc;
-      setCells((c) => {
-        if (c[idx] === "pellet") {
-          const q = getNextQuestion();
-          setCurrentPelletIdx(idx);
-          setCurrentQuestion(q);
-          setQuestionPhase("reading");
-          setTimeout(() => setQuestionPhase("answering"), 1600);
-        }
-        return c;
-      });
+      if (cellsRef.current[idx] === "pellet") eatPellet(idx);
       return { row: nr, col: nc };
     });
   }
 
-  function handleAnswer(optionId: string) {
-    if (!currentQuestion || questionPhase !== "answering") return;
-
-    if (optionId === currentQuestion.correctId) {
-      // Correct
-      setCells((prev) => {
-        const next = [...prev];
-        if (currentPelletIdx !== null) next[currentPelletIdx] = "empty";
-        return next;
-      });
-      const newPellets = pelletsRef.current + 1;
-      pelletsRef.current = newPellets;
-      scoreRef.current += 20;
-      setPelletsEaten(newPellets);
-      setScore(scoreRef.current);
-      setCurrentQuestion(null);
-      setCurrentPelletIdx(null);
-      setQuestionPhase(null);
-
-      // Spawn ghosts after 3 pellets
-      if (newPellets === 3 && ghosts.length === 0) {
-        const gc = GHOST_COUNTS[level];
-        const corners = [
-          { id: 0, row: 0, col: 0 },
-          { id: 1, row: 0, col: gridSize - 1 },
-          { id: 2, row: gridSize - 1, col: 0 },
-          { id: 3, row: gridSize - 1, col: gridSize - 1 },
-        ];
-        setGhosts(corners.slice(0, gc));
-      }
-
-      if (newPellets >= TARGET_PELLETS && !doneRef.current) {
-        doneRef.current = true;
-        setGameState("won");
-        setTimeout(() => {
-          onComplete({ finalScore: scoreRef.current, level, gameType: "robocody", completed: true });
-        }, 1500);
-      }
-    } else {
-      // Wrong — repeat question
-      setWrongFlash(true);
-      setTimeout(() => setWrongFlash(false), 600);
-      setQuestionPhase("reading");
-      setTimeout(() => setQuestionPhase("answering"), 1600);
-    }
-  }
-
   const gridPx = gridSize * cellSize;
-  const ABCD = ["A", "B", "C", "D"];
 
   if (cells.length === 0) return null;
 
@@ -417,85 +360,6 @@ export default function RoboCody({ gameLevel, questions, onComplete }: Props) {
         )}
       </div>
 
-      {/* Question overlay */}
-      {currentQuestion && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(5,5,15,0.92)", backdropFilter: "blur(4px)" }}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl border p-6 flex flex-col gap-4"
-            style={{
-              background: "#0f0f1a",
-              borderColor: wrongFlash ? "var(--brand-secondary)" : "var(--brand-primary)",
-              boxShadow: wrongFlash ? "0 0 30px rgba(255,0,191,0.3)" : "0 0 30px rgba(0,220,222,0.2)",
-              animation: "question-pop 0.25s ease-out",
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🤖</span>
-              <span
-                style={{
-                  fontFamily: "var(--font-bebas)",
-                  fontSize: 14,
-                  color: "var(--brand-primary)",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                {questionPhase === "reading" ? "READ CAREFULLY…" : "CHOOSE AN ANSWER!"}
-              </span>
-            </div>
-
-            <p
-              className="text-center"
-              style={{
-                fontFamily: "var(--font-syne)",
-                fontSize: 17,
-                fontWeight: 600,
-                color: "var(--text)",
-                lineHeight: 1.4,
-              }}
-            >
-              {currentQuestion.text}
-            </p>
-
-            <div className="grid grid-cols-2 gap-2">
-              {currentQuestion.options.map((opt, i) => (
-                <button
-                  key={opt.id}
-                  onClick={() => handleAnswer(opt.id)}
-                  disabled={questionPhase !== "answering"}
-                  className="rounded-xl px-3 py-3 text-left transition-all active:scale-95 disabled:opacity-30"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    cursor: questionPhase === "answering" ? "pointer" : "default",
-                  }}
-                >
-                  <span
-                    className="font-black mr-2"
-                    style={{ fontFamily: "var(--font-bebas)", color: "var(--brand-primary)", fontSize: 16 }}
-                  >
-                    {ABCD[i]}
-                  </span>
-                  <span style={{ fontFamily: "var(--font-syne)", fontSize: 13, color: "var(--text)" }}>
-                    {opt.text}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {wrongFlash && (
-              <p
-                className="text-center text-sm"
-                style={{ fontFamily: "var(--font-syne)", color: "var(--brand-secondary)" }}
-              >
-                Try again!
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

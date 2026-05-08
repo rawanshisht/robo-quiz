@@ -46,7 +46,7 @@ export async function POST(
 
   if (shouldBreak) {
     await setBreakPendingQuestion(session.id, nextIndex);
-    const level = Math.min(5, nextIndex / 5);
+    const level = Math.min(5, Math.floor(nextIndex / 3));
     const event: GameBreakStartEvent = { gameType: session.mini_game_type!, level };
 
     if (session.mini_game_type === "robocody") {
